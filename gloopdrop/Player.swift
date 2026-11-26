@@ -1,0 +1,73 @@
+//
+//  Player.swift
+//  gloopdrop
+//
+//  Created by Juan Carlos Pazos on 25/11/26.
+//
+
+import Foundation
+import SpriteKit
+
+// This enum lets easily switch between animations
+enum PlayerAnimationType: String {
+    case walk
+}
+
+class Player: SKSpriteNode {
+    // MARK: - Properties
+    // Textures (animation)
+    private var walkTextures: [SKTexture]?
+    
+    // MARK: - Init
+    init() {
+        // Set default texture
+        let texture = SKTexture(imageNamed: "blob-walk_0")
+        
+        // Call the super.init
+        super.init(texture: texture, color: .clear, size: texture.size())
+        
+        // Set up animation textures
+        self.walkTextures = self.loadTextures(atlas: "blob", prefix: "blob-walk_", startsAt: 0, stopsAt: 2)
+        
+        // Set up other properties afetr init
+        self.name = "player"
+        self.setScale(1.0)
+        self.anchorPoint = CGPoint(x: 0.5, y: 0.0)
+        self.zPosition = Layer.player.rawValue
+        // center-bottom
+    }
+    
+    required init?(coder aDecoder: NSCoder) {
+        fatalError("init(coder: has not been implemented")
+    }
+    
+    // MARK: - Methods
+    func walk() {
+        // Check the textures
+        guard let walkTextures = walkTextures else {
+            preconditionFailure("Could not find textures!")
+        }
+        
+        // Run animation (forever)
+        startAnimation(textures: walkTextures, speed: 0.25, name: PlayerAnimationType.walk.rawValue, count: 0, resize: true, restore: true)
+    }
+    
+    func moveToPosition(pos: CGPoint, direction: String, speed: TimeInterval) {
+        switch direction {
+        case "L":
+            xScale = -abs(xScale)
+        default:
+            xScale = abs(xScale)
+        }
+        
+        let moveAction = SKAction.move(to: pos, duration: speed)
+        run(moveAction)
+    }
+    
+    func setupConstrains(floor: CGFloat) {
+        let range = SKRange(lowerLimit: floor, upperLimit: floor)
+        let lockToPlaform = SKConstraint.positionY(range)
+        
+        constraints = [lockToPlaform]
+    }
+}
