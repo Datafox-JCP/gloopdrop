@@ -16,7 +16,7 @@ class GameScene: SKScene {
     var movingPlayer = false
     var lastPosition: CGPoint?
     
-    var level: Int = 8
+    var level: Int = 1
     var numberOfDrops: Int = 10
     
     var dropSpeed: CGFloat = 1.0
@@ -24,6 +24,9 @@ class GameScene: SKScene {
     var maxDropSpeed: CGFloat = 1.0 // slowest drop
     
     override func didMove(to view: SKView) {
+        // Set up physics world contact delegate
+        physicsWorld.contactDelegate = self
+        
         // Set up background
         let background = SKSpriteNode(imageNamed: "background_1")
         background.anchorPoint = CGPoint(x: 0, y: 0)
@@ -36,6 +39,13 @@ class GameScene: SKScene {
         foreground.anchorPoint = CGPoint(x: 0, y: 0)
         foreground.zPosition = Layer.foreground.rawValue
         foreground.position = CGPoint(x: 0, y: 0)
+        // Add physics body
+        foreground.physicsBody = SKPhysicsBody(edgeLoopFrom: foreground.frame)
+        foreground.physicsBody?.affectedByGravity = false
+        // Set up physics categories for contacts
+        foreground.physicsBody?.categoryBitMask = PhysicsCategory.foreground
+        foreground.physicsBody?.contactTestBitMask = PhysicsCategory.collectible
+        foreground.physicsBody?.collisionBitMask = PhysicsCategory.none
         addChild(foreground)
         
         // Set up player
@@ -158,5 +168,36 @@ class GameScene: SKScene {
     
     func touchUp(atPoint pos: CGPoint) {
         movingPlayer = false
+    }
+}
+
+// MARK: - Collision detection
+
+// Methods start here
+extension GameScene: SKPhysicsContactDelegate {
+    func didBegin(_ contact: SKPhysicsContact) {
+        // Check collision bodies
+        let collision = contact.bodyA.categoryBitMask | contact.bodyB.categoryBitMask
+        // Did the player collide with the collectible?
+        if collision == PhysicsCategory.player | PhysicsCategory.collectible {
+            // Find out which body is attached to the collectible node
+            let body = contact.bodyA.categoryBitMask == PhysicsCategory.collectible ? contact.bodyA.node : contact.bodyB.node
+            
+            // Verify the objetct is a collectible
+            if let sprite = body as? Collectible {
+                sprite.collected()
+            }
+        }
+        
+        // Or did the collectible collide with the foreground?
+        if collision == PhysicsCategory.foreground | PhysicsCategory.collectible {
+            // Find out which body is attached to the collectible node
+            let body = contact.bodyA.categoryBitMask == PhysicsCategory.collectible ? contact.bodyA.node : contact.bodyB.node
+            
+            // Verify the objetct is a collectible
+            if let sprite = body as? Collectible {
+                sprite.missed()
+            }
+        }
     }
 }
