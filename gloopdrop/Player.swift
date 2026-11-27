@@ -11,12 +11,14 @@ import SpriteKit
 // This enum lets easily switch between animations
 enum PlayerAnimationType: String {
     case walk
+    case die
 }
 
 class Player: SKSpriteNode {
     // MARK: - Properties
     // Textures (animation)
     private var walkTextures: [SKTexture]?
+    private var dieTextures: [SKTexture]?
     
     // MARK: - Init
     init() {
@@ -28,6 +30,7 @@ class Player: SKSpriteNode {
         
         // Set up animation textures
         self.walkTextures = self.loadTextures(atlas: "blob", prefix: "blob-walk_", startsAt: 0, stopsAt: 2)
+        self.dieTextures = self.loadTextures(atlas: "blob", prefix: "blob-die_", startsAt: 0, stopsAt: 0)
         
         // Set up other properties afetr init
         self.name = "player"
@@ -57,8 +60,24 @@ class Player: SKSpriteNode {
             preconditionFailure("Could not find textures!")
         }
         
+        // Stop the die animation
+        removeAction(forKey: PlayerAnimationType.die.rawValue)
+        
         // Run animation (forever)
         startAnimation(textures: walkTextures, speed: 0.25, name: PlayerAnimationType.walk.rawValue, count: 0, resize: true, restore: true)
+    }
+    
+    func die() {
+        // Check for textures
+        guard let dieTextures = dieTextures else {
+            preconditionFailure("Could not find textures!")
+        }
+        
+        // Stop walk animation
+        removeAction(forKey: PlayerAnimationType.walk.rawValue)
+        
+        // Run animation (forever)
+        startAnimation(textures: dieTextures, speed: 0.25, name: PlayerAnimationType.die.rawValue, count: 0, resize: true, restore: true)
     }
     
     func moveToPosition(pos: CGPoint, direction: String, speed: TimeInterval) {
