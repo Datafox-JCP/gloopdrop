@@ -15,25 +15,28 @@ enum CollectibleType: String {
 }
 
 class Collectible: SKSpriteNode {
-    // MARK: - PROPERTIES
-      private var collectibleType: CollectibleType = .none
-
-      // MARK: - INIT
-      init(collectibleType: CollectibleType) {
+    // MARK: - Properties
+    private var collectibleType: CollectibleType = .none
+    
+    private let playCollectSound = SKAction.playSoundFileNamed("collect.wav", waitForCompletion: false)
+    private let playMissSound = SKAction.playSoundFileNamed("miss.wav", waitForCompletion: false)
+    
+    // MARK: - Init
+    init(collectibleType: CollectibleType) {
         var texture: SKTexture!
         self.collectibleType = collectibleType
-
+        
         // Set the texture based on the type
         switch self.collectibleType {
         case .gloop:
-          texture = SKTexture(imageNamed: "gloop")
+            texture = SKTexture(imageNamed: "gloop")
         case .none:
-          break
+            break
         }
-
+        
         // Call to super.init
         super.init(texture: texture, color: SKColor.clear, size: texture.size())
-
+        
         // Set up collectible
         self.name = "co_\(collectibleType)"
         self.anchorPoint = CGPoint(x: 0.5, y: 1.0)
@@ -42,12 +45,19 @@ class Collectible: SKSpriteNode {
         // Add physics body
         self.physicsBody = SKPhysicsBody(rectangleOf: self.size, center: CGPoint(x: 0.0, y: -self.size.height/2))
         self.physicsBody?.affectedByGravity = false
-          
-          // Set up physics categories for contacts
-          self.physicsBody?.categoryBitMask = PhysicsCategory.collectible
-          self.physicsBody?.contactTestBitMask = PhysicsCategory.player | PhysicsCategory.foreground
-          self.physicsBody?.collisionBitMask = PhysicsCategory.none
-      }
+        
+        // Set up physics categories for contacts
+        self.physicsBody?.categoryBitMask = PhysicsCategory.collectible
+        self.physicsBody?.contactTestBitMask = PhysicsCategory.player | PhysicsCategory.foreground
+        self.physicsBody?.collisionBitMask = PhysicsCategory.none
+        
+        // Add glow effect
+        let effectNode = SKEffectNode()
+        effectNode.shouldRasterize = true
+        addChild(effectNode)
+        effectNode.addChild(SKSpriteNode(texture: texture))
+        effectNode.filter = CIFilter(name: "CIGaussianBlur", parameters: ["inputRadius": 40.0])
+    }
     
     required init?(coder aDecoder: NSCoder) {
         fatalError("init(coder: has not been implemented")
@@ -73,11 +83,16 @@ class Collectible: SKSpriteNode {
     // Handle contacts
     func collected() {
         let removeFromParent = SKAction.removeFromParent()
-        self.run(removeFromParent)
+        let actionGroup = SKAction.group([playCollectSound, removeFromParent])
+        self.run(actionGroup)
     }
     
     func missed() {
-        let removeFromParent = SKAction.removeFromParent()
-        self.run(removeFromParent)
+        let move = SKAction.moveBy(x: 0, y: size.height / 1.5, duration: 0.0)
+        let splatX = SKAction.scaleX(to: 1.5, duration: 0.0) // make wider
+        let splatY = SKAction.scaleY(to: 0.5, duration: 0.0) // make shorter
+        
+        let actionGroup = SKAction.group([playMissSound, move, splatX, splatY])
+        self.run(actionGroup)
     }
 }

@@ -54,6 +54,11 @@ class Player: SKSpriteNode {
     }
     
     // MARK: - Methods
+    func mumble() {
+        let random = Int.random(in: 1...3)
+        let playSound = SKAction.playSoundFileNamed("blob_mumble-\(random)", waitForCompletion: true)
+        self.run(playSound, withKey: "mumble")
+    }
     func walk() {
         // Check the textures
         guard let walkTextures = walkTextures else {
